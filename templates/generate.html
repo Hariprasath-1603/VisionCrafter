@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionCrafter - AI Image Generator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+        .flash {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .flash.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+        }
+        .flash.success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+        }
+        .form-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        .label-hint {
+            font-weight: 400;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.3s ease, transform 0.2s ease;
+            width: 100%;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .advanced-toggle {
+            margin-bottom: 1rem;
+            color: #94a3b8;
+            cursor: pointer;
+            user-select: none;
+        }
+        .advanced-toggle:hover {
+            color: #e94560;
+        }
+        .advanced-options {
+            display: none;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 1rem;
+        }
+        .advanced-options.show {
+            display: block;
+        }
+        .prompt-examples {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+        }
+        .prompt-examples h3 {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+        }
+        .example-prompt {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            background: rgba(233, 69, 96, 0.1);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            border-radius: 20px;
+            font-size: 0.875rem;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .example-prompt:hover {
+            background: rgba(233, 69, 96, 0.2);
+            border-color: #e94560;
+        }
+        .device-info {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        .device-info span {
+            color: #22c55e;
+            font-weight: 600;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            margin-top: 1rem;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">Generating images...</div>
+        <div class="loading-text" style="font-size: 0.875rem; color: #94a3b8; margin-top: 0.5rem;">
+            This may take 10-30 seconds
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>🎨 VisionCrafter</h1>
+            <p class="subtitle">Enter a prompt to create AI-generated images using GAN</p>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-card">
+            <form method="POST" id="generate-form">
+                <div class="form-group">
+                    <label for="prompt">Prompt <span class="label-hint">(describe the image you want)</span></label>
+                    <textarea name="prompt" id="prompt" 
+                              placeholder="A majestic lion sitting on a throne, digital art, highly detailed, 4k"
+                              required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="negative_prompt">Negative Prompt <span class="label-hint">(what to avoid)</span></label>
+                    <input type="text" name="negative_prompt" id="negative_prompt" 
+                           placeholder="blurry, bad quality, distorted, ugly">
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label for="num_images">Number of Images</label>
+                        <input type="number" name="num_images" id="num_images" value="1" min="1" max="4">
+                    </div>
+                    <div class="form-group">
+                        <label for="seed">Seed <span class="label-hint">(optional)</span></label>
+                        <input type="number" name="seed" id="seed" placeholder="Random">
+                    </div>
+                </div>
+
+                <div class="advanced-toggle" onclick="toggleAdvanced()">
+                    ⚙️ Advanced Options ▼
+                </div>
+                
+                <div class="advanced-options" id="advanced-options">
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="num_steps">Inference Steps</label>
+                            <input type="number" name="num_steps" id="num_steps" value="25" min="10" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label for="guidance_scale">Guidance Scale</label>
+                            <input type="number" name="guidance_scale" id="guidance_scale" value="7.5" min="1" max="20" step="0.5">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group">
+                            <label for="width">Width</label>
+                            <input type="number" name="width" id="width" value="512" min="64" max="1024" step="64">
+                        </div>
+                        <div class="form-group">
+                            <label for="height">Height</label>
+                            <input type="number" name="height" id="height" value="512" min="64" max="1024" step="64">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="submit-btn">
+                    ✨ Generate Images
+                </button>
+            </form>
+
+            <div class="prompt-examples">
+                <h3>💡 Example prompts (click to use):</h3>
+                <span class="example-prompt" onclick="usePrompt(this)">A serene Japanese garden with cherry blossoms, studio ghibli style</span>
+                <span class="example-prompt" onclick="usePrompt(this)">Cyberpunk city at night, neon lights, rain, 8k wallpaper</span>
+                <span class="example-prompt" onclick="usePrompt(this)">Portrait of a wise wizard with a long beard, fantasy art</span>
+                <span class="example-prompt" onclick="usePrompt(this)">Cute robot making coffee, pixar style, 3d render</span>
+                <span class="example-prompt" onclick="usePrompt(this)">Abstract colorful fluid art, vibrant colors, 4k</span>
+            </div>
+        </div>
+
+        <div class="device-info" id="device-info">
+            Loading device info...
+        </div>
+    </div>
+
+    <script>
+        function toggleAdvanced() {
+            const options = document.getElementById('advanced-options');
+            options.classList.toggle('show');
+        }
+
+        function usePrompt(el) {
+            document.getElementById('prompt').value = el.textContent;
+        }
+
+        document.getElementById('generate-form').addEventListener('submit', function(e) {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) {
+                e.preventDefault();
+                alert('Please enter a prompt.');
+                return;
+            }
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('submit-btn').disabled = true;
+        });
+
+        // Fetch device info
+        fetch('/health')
+            .then(res => res.json())
+            .then(data => {
+                const el = document.getElementById('device-info');
+                const device = data.cuda_available 
+                    ? `<span style="color: #22c55e;">CUDA GPU</span>` 
+                    : `<span style="color: #f5a623;">CPU</span>`;
+                el.innerHTML = `Running on: ${device} | Model: VisionCrafter GAN`;
+            })
+            .catch(() => {
+                document.getElementById('device-info').textContent = 'Device info unavailable';
+            });
+    </script>
+</body>
+</html>

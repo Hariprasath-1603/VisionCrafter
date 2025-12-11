@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionCrafter - Generated Images</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .back-link:hover {
+            color: #fff;
+        }
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .prompt-info {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .prompt-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+        .prompt-text {
+            font-size: 1.1rem;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+        .prompt-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .meta-item {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+        .meta-item strong {
+            color: #e94560;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .image-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .image-card img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+        }
+        .image-actions {
+            padding: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .actions .btn {
+            flex: 0 0 auto;
+            padding: 1rem 2rem;
+        }
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+        .lightbox.active {
+            display: flex;
+        }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 1001;
+        }
+    </style>
+</head>
+<body>
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img src="" alt="Full size" id="lightbox-img">
+    </div>
+
+    <div class="container">
+        <header>
+            <a href="{{ url_for('generate') }}" class="back-link">← Generate New Images</a>
+            <h1>🎨 VisionCrafter Results</h1>
+        </header>
+
+        <div class="prompt-info">
+            <div class="prompt-label">Prompt</div>
+            <div class="prompt-text">{{ prompt }}</div>
+            {% if negative_prompt %}
+            <div class="prompt-label" style="margin-top: 1rem;">Negative Prompt</div>
+            <div class="prompt-text" style="color: #94a3b8;">{{ negative_prompt }}</div>
+            {% endif %}
+            <div class="prompt-meta">
+                <span class="meta-item">Images: <strong>{{ num_images }}</strong></span>
+                {% if seed %}
+                <span class="meta-item">Seed: <strong>{{ seed }}</strong></span>
+                {% endif %}
+                {% if num_steps %}
+                <span class="meta-item">Steps: <strong>{{ num_steps }}</strong></span>
+                {% endif %}
+                {% if guidance_scale %}
+                <span class="meta-item">Guidance: <strong>{{ guidance_scale }}</strong></span>
+                {% endif %}
+                {% if width and height %}
+                <span class="meta-item">Size: <strong>{{ width }}×{{ height }}</strong></span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="image-grid">
+            {% for image_path in images %}
+            <div class="image-card">
+                <img src="/{{ image_path }}" alt="Generated image {{ loop.index }}" 
+                     onclick="openLightbox('/{{ image_path }}')">
+                <div class="image-actions">
+                    <a href="/{{ image_path }}" download class="btn">Download</a>
+                    <button class="btn btn-secondary" onclick="copyPrompt()">Copy Prompt</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="actions">
+            <a href="{{ url_for('generate') }}" class="btn">✨ Generate More Images</a>
+        </div>
+    </div>
+
+    <script>
+        var promptText = "";
+        try {
+            promptText = JSON.parse(document.getElementById('prompt-data').textContent);
+        } catch(e) {
+            promptText = "";
+        }
+
+        function openLightbox(src) {
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        function copyPrompt() {
+            navigator.clipboard.writeText(promptText).then(function() {
+                alert('Prompt copied to clipboard!');
+            });
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeLightbox();
+        });
+    </script>
+    <script type="application/json" id="prompt-data">{{ prompt|tojson }}</script>
+</body>
+</html>

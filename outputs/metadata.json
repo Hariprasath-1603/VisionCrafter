@@ -1,0 +1,9 @@
+{
+  "epoch": 13,
+  "global_step": 10153,
+  "best_gen_loss": 5.114405396500562,
+  "last_checkpoint": "outputs\\checkpoints\\gan_epoch_013.pt",
+  "best_generator": "outputs\\checkpoints\\best_generator.pt",
+  "ema_generator": null,
+  "fid": null
+}

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification Results - GAN Web App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        header {
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .back-link:hover {
+            color: #fff;
+        }
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .results-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        @media (max-width: 768px) {
+            .results-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        .image-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .image-panel img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+        .image-panel h3 {
+            margin-top: 1rem;
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: normal;
+        }
+        .predictions-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+        .predictions-panel h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: #e2e8f0;
+        }
+        .prediction {
+            margin-bottom: 1.25rem;
+        }
+        .prediction:last-child {
+            margin-bottom: 0;
+        }
+        .prediction-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .prediction-rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-right: 0.75rem;
+        }
+        .prediction-rank.top {
+            width: 32px;
+            height: 32px;
+            font-size: 0.875rem;
+        }
+        .prediction-class {
+            flex: 1;
+            font-weight: 500;
+            color: #e2e8f0;
+            text-transform: capitalize;
+        }
+        .prediction-confidence {
+            font-weight: bold;
+            color: #22c55e;
+        }
+        .prediction-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .prediction-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        .top-prediction {
+            background: rgba(233, 69, 96, 0.1);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .top-prediction .prediction-class {
+            font-size: 1.1rem;
+        }
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .model-info {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="{{ url_for('classify') }}" class="back-link">← Classify Another</a>
+            <h1>📊 Classification Results</h1>
+        </header>
+
+        <div class="results-layout">
+            <div class="image-panel">
+                <img src="/{{ image_path }}" alt="Classified image">
+                <h3>Uploaded Image</h3>
+            </div>
+
+            <div class="predictions-panel">
+                <h2>Top {{ top_k }} Predictions</h2>
+                
+                {% for class_name, confidence in predictions %}
+                    {% if loop.first %}
+                    <div class="top-prediction prediction">
+                        <div class="prediction-header">
+                            <span class="prediction-rank top">1</span>
+                            <span class="prediction-class">{{ class_name }}</span>
+                            <span class="prediction-confidence">{{ "%.1f"|format(confidence) }}%</span>
+                        </div>
+                        <div class="prediction-bar">
+                            <div class="prediction-bar-fill" data-width="{{ confidence }}"></div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="prediction">
+                        <div class="prediction-header">
+                            <span class="prediction-rank">{{ loop.index }}</span>
+                            <span class="prediction-class">{{ class_name }}</span>
+                            <span class="prediction-confidence">{{ "%.1f"|format(confidence) }}%</span>
+                        </div>
+                        <div class="prediction-bar">
+                            <div class="prediction-bar-fill" data-width="{{ confidence }}"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="actions">
+            <a href="{{ url_for('classify') }}" class="btn">Classify Another Image</a>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Home</a>
+        </div>
+
+        <div class="model-info">
+            <strong>Model:</strong> ResNet50 (ImageNet pretrained) • 
+            <strong>Classes:</strong> 1000 ImageNet categories • 
+            <strong>Predictions shown:</strong> Top {{ top_k }}
+        </div>
+    </div>
+    <script>
+        document.querySelectorAll('.prediction-bar-fill').forEach(function(el) {
+            var width = el.getAttribute('data-width');
+            if (width) {
+                el.style.width = width + '%';
+            }
+        });
+    </script>
+</body>
+</html>

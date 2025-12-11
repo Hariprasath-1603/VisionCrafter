@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classify Image - GAN Web App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        header {
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            color: #94a3b8;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .back-link:hover {
+            color: #fff;
+        }
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .flash-messages {
+            margin-bottom: 2rem;
+        }
+        .flash {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .flash.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+        }
+        .form-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        .label-hint {
+            font-weight: 400;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .file-upload {
+            position: relative;
+            width: 100%;
+            padding: 3rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-upload:hover {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+        .file-upload.dragover {
+            border-color: #e94560;
+            background: rgba(233, 69, 96, 0.1);
+        }
+        .file-upload input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-upload-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .file-upload-text {
+            color: #94a3b8;
+        }
+        .file-upload-text strong {
+            color: #e94560;
+        }
+        .preview {
+            display: none;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .preview.active {
+            display: block;
+        }
+        .preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+        }
+        .preview-name {
+            margin-top: 0.5rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(90deg, #e94560, #f5a623);
+            color: #fff;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: opacity 0.3s ease, transform 0.2s ease;
+            width: 100%;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .info-box {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: #86efac;
+        }
+        .info-box strong {
+            color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="{{ url_for('index') }}" class="back-link">← Back to Home</a>
+            <h1>🔍 Classify Image</h1>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-card">
+            <form method="POST" enctype="multipart/form-data" id="classify-form">
+                <div class="form-group">
+                    <label>Upload Image <span class="label-hint">(PNG, JPG, GIF)</span></label>
+                    <div class="file-upload" id="file-upload">
+                        <input type="file" name="image_file" id="image_file" accept="image/*" required>
+                        <div class="file-upload-icon">📷</div>
+                        <div class="file-upload-text">
+                            <strong>Click to upload</strong> or drag and drop<br>
+                            PNG, JPG, or GIF (max 16MB)
+                        </div>
+                    </div>
+                    <div class="preview" id="preview">
+                        <img src="" alt="Preview" id="preview-img">
+                        <div class="preview-name" id="preview-name"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="top_k">Top K Predictions</label>
+                    <input type="number" name="top_k" id="top_k" value="5" min="1" max="20">
+                </div>
+
+                <button type="submit" class="btn" id="submit-btn">
+                    Classify Image
+                </button>
+            </form>
+
+            <div class="info-box">
+                <strong>ℹ️ Model:</strong> ResNet50 pretrained on ImageNet (1000 classes)<br>
+                Classifications include common objects, animals, vehicles, and more.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileUpload = document.getElementById('file-upload');
+        const fileInput = document.getElementById('image_file');
+        const preview = document.getElementById('preview');
+        const previewImg = document.getElementById('preview-img');
+        const previewName = document.getElementById('preview-name');
+        
+        // Drag and drop
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+        
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+        
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                showPreview(e.dataTransfer.files[0]);
+            }
+        });
+        
+        // File selection
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                showPreview(e.target.files[0]);
+            }
+        });
+        
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewName.textContent = file.name;
+                preview.classList.add('active');
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Form submission
+        document.getElementById('classify-form').addEventListener('submit', function(e) {
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                alert('Please upload an image to classify.');
+                return;
+            }
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').textContent = 'Classifying...';
+        });
+    </script>
+</body>
+</html>
