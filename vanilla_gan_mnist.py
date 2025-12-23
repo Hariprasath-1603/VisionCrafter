@@ -172,17 +172,4 @@ def train() -> None:
 if __name__ == "__main__":
     train()
 
-"""
-How this works (brief):
-- The generator maps random noise z ~ N(0, I) into images; it learns to make D think its outputs are real.
-- The discriminator is a CNN binary classifier predicting real vs fake with a sigmoid output.
-- Training alternates: update D on real+fake batches, then update G to fool D.
-- Binary cross entropy is used because we model real/fake as Bernoulli labels; Adam with betas (0.5, 0.999) is a common stable choice for GANs.
 
-How to extend toward DCGAN / better quality:
-- Replace the initial Linear layer in G with a ConvTranspose stack starting from a learned 4x4 feature map (standard DCGAN pattern).
-- Add more channels/depth, spectral normalization on D, or gradient penalty (e.g., WGAN-GP) for stability.
-- Try label smoothing for real labels (e.g., 0.9 instead of 1.0) or noisy labels to regularize D.
-- Use larger images/datasets by adjusting IMG_SIZE, architecture depth, and dataset path/loader.
-- Add checkpointing for models/optimizers and an evaluation notebook to inspect generated grids across training.
-"""
